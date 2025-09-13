@@ -11,48 +11,58 @@ import {MockAggregator} from "../src/MockAggregator.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-contract PresaleTest is Test, StdCheats {
+contract PresaleTest is Test {
     Presale public presale;
     FlyToken public flyToken;
     MockTreasury public mockTreasury;
     MockAggregator public mockAggregator;
 
-    address public owner = address(this); 
+    address public owner = address(this);
     address public user = vm.addr(5);
     address public user2 = vm.addr(6);
     address userWithUsdt = vm.addr(7);
 
     address _usdtAddress = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
-    address _usdcAddress =  vm.addr(3); 
-    address _dataFeedAddress =  0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612; 
+    address _usdcAddress = vm.addr(3);
+    address _dataFeedAddress = 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612;
     uint256 _maxSupply = 30000000 * 1e18; // 30M
-    uint256 _startingTime = block.timestamp; 
-    uint256 _endingTime = block.timestamp + 5000; 
-    uint256[][3] _phases; 
+    uint256 _startingTime = block.timestamp;
+    uint256 _endingTime = block.timestamp + 5000;
+    uint256[][3] _phases;
 
     function setUp() public {
         _phases[0] = [10000000 * 1e18, 5000, block.timestamp + 1000];
-        _phases[1] = [10000000 * 1e18, 500, block.timestamp + 1000]; 
+        _phases[1] = [10000000 * 1e18, 500, block.timestamp + 1000];
         _phases[2] = [10000000 * 1e18, 50, block.timestamp + 1000];
 
         mockTreasury = new MockTreasury();
         mockAggregator = new MockAggregator(2000e8);
         flyToken = new FlyToken();
         flyToken.approve(address(this), 30_000_000 * 1e18);
-        presale = new Presale(address(flyToken), _usdcAddress,  _usdtAddress, address(mockTreasury), address(mockAggregator), _phases,_maxSupply, _startingTime, _endingTime );
+        presale = new Presale(
+            address(flyToken),
+            _usdcAddress,
+            _usdtAddress,
+            address(mockTreasury),
+            address(mockAggregator),
+            _phases,
+            _maxSupply,
+            _startingTime,
+            _endingTime
+        );
 
         deal(_usdtAddress, userWithUsdt, 100_000_000e6); // 100M USDT
     }
 
     receive() external payable {}
 
-     /**
+    /**
      * @notice Tests that the owner can successfully add a user to the blacklist.
      * @dev Uses `vm.prank` to impersonate the owner and verifies that the mapping updates correctly.
      */
     function test_blacklist() public {
         vm.startPrank(owner);
-        presale.blacklist(user);    
+        presale.blacklist(user);
         assertTrue(presale.isBlacklisted(user));
         vm.stopPrank();
     }
@@ -92,7 +102,7 @@ contract PresaleTest is Test, StdCheats {
 
     /**
      * @notice Tests that a user can buy with USDT and the fee mechanism works correctly.
-     * @dev 
+     * @dev
      * - Approves Presale to spend user's USDT.
      * - Executes a buy with 1000 USDT.
      * - Verifies that:
@@ -107,15 +117,15 @@ contract PresaleTest is Test, StdCheats {
         IERC20(_usdtAddress).approve(address(presale), amountIn);
 
         uint256 beforeFundsReceiver = IERC20(_usdtAddress).balanceOf(address(mockTreasury));
-        uint256 beforeFees = presale.collectedFees(_usdtAddress); 
+        uint256 beforeFees = presale.collectedFees(_usdtAddress);
         uint256 beforeUserDeposit = presale.userTokensDeposited(userWithUsdt);
 
         presale.buyWithTokens(_usdtAddress, amountIn);
 
         uint256 expectedFee = (amountIn * presale.FEE_BPS()) / 10_000; // fee en USDT
-        uint256 expectedNet = amountIn - expectedFee;     
+        uint256 expectedNet = amountIn - expectedFee;
 
-        uint256 afterFundsReceiver  = IERC20(_usdtAddress).balanceOf(address(mockTreasury));
+        uint256 afterFundsReceiver = IERC20(_usdtAddress).balanceOf(address(mockTreasury));
         uint256 afterFees = presale.collectedFees(_usdtAddress);
         uint256 afterUserDeposit = presale.userTokensDeposited(userWithUsdt);
 
@@ -167,7 +177,7 @@ contract PresaleTest is Test, StdCheats {
      */
     function test_buyWithTokens_revertsIfPresaleInactive() public {
         vm.startPrank(userWithUsdt);
-        vm.warp(_startingTime -  1 days);
+        vm.warp(_startingTime - 1 days);
         vm.expectRevert(bytes("Presale inactive"));
         presale.buyWithTokens(_usdtAddress, 1000e6);
         vm.stopPrank();
@@ -195,8 +205,8 @@ contract PresaleTest is Test, StdCheats {
     function test_buyWithTokens_triggersPhaseChange() public {
         vm.startPrank(userWithUsdt);
 
-        uint256 phase0Supply = presale.phases(0, 0); 
-        uint256 phase0Price  = presale.phases(0, 1); 
+        uint256 phase0Supply = presale.phases(0, 0);
+        uint256 phase0Price = presale.phases(0, 1);
 
         uint256 usdtNeeded = (phase0Supply * phase0Price) / 1e6;
 
@@ -209,7 +219,6 @@ contract PresaleTest is Test, StdCheats {
 
         vm.stopPrank();
     }
-
 
     /**
      * @notice Fuzz test for buyWithTokens with arbitrary USDT amounts.
@@ -233,7 +242,7 @@ contract PresaleTest is Test, StdCheats {
 
     /**
      * @notice Tests that a user can buy with ETH and the fee mechanism works correctly.
-     * @dev 
+     * @dev
      * - Sends 1 ETH to buyWithETH.
      * - Verifies that:
      *    1. Funds receiver gets the net ETH after fee.
@@ -251,7 +260,7 @@ contract PresaleTest is Test, StdCheats {
 
         presale.buyWithETH{value: 1 ether}();
 
-        uint256 expectedFee = (1 ether * presale.FEE_BPS()) / 10_000; 
+        uint256 expectedFee = (1 ether * presale.FEE_BPS()) / 10_000;
         uint256 expectedNet = 1 ether - expectedFee;
 
         uint256 afterFundsReceiver = address(mockTreasury).balance;
@@ -264,7 +273,7 @@ contract PresaleTest is Test, StdCheats {
 
         vm.stopPrank();
     }
-    
+
     /**
      * @notice Tests that a blacklisted user cannot buy with ETH.
      */
@@ -326,7 +335,7 @@ contract PresaleTest is Test, StdCheats {
         uint256 usdValue = (netEth * ethPrice) / 1e18;
 
         // 3) Cálculo de tokens a recibir
-        uint256 expectedTokens = usdValue * 1e6 / presale.phases(0,1);
+        uint256 expectedTokens = usdValue * 1e6 / presale.phases(0, 1);
 
         assertEq(afterDeposit - beforeDeposit, expectedTokens, "wrong token allocation");
 
@@ -342,7 +351,7 @@ contract PresaleTest is Test, StdCheats {
         presale.depositSaleTokens(1_000_000e18);
         vm.stopPrank();
 
-        deal(_usdtAddress, user, 1_000e6); 
+        deal(_usdtAddress, user, 1_000e6);
         vm.startPrank(user);
         IERC20(_usdtAddress).approve(address(presale), 1_000e6);
         presale.buyWithTokens(_usdtAddress, 1_000e6);
@@ -360,7 +369,6 @@ contract PresaleTest is Test, StdCheats {
 
         vm.stopPrank();
     }
-
 
     /**
      * @notice Tests that claimTokens reverts if called before the presale ends.
@@ -464,7 +472,6 @@ contract PresaleTest is Test, StdCheats {
         assertEq(presale.collectedFees(_usdtAddress), 0, "fees not cleared");
     }
 
-
     /**
      * @notice Tests that the owner can withdraw ETH fees after the presale ends.
      */
@@ -490,7 +497,6 @@ contract PresaleTest is Test, StdCheats {
         assertEq(presale.collectedETHFees(), 0, "ETH fees not cleared");
     }
 
-
     /**
      * @notice Tests that non-owners cannot call withdrawFees.
      */
@@ -512,5 +518,4 @@ contract PresaleTest is Test, StdCheats {
         presale.withdrawFees(_usdtAddress);
         vm.stopPrank();
     }
-
 }

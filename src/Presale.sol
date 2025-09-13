@@ -18,16 +18,16 @@ contract Presale is Ownable, ReentrancyGuard {
     address public fundsReceiverAddr;
     address public dataFeedAddress;
     uint256[][3] public phases; // matrix with X rows as number of fases and 3 cols [supply][price][time]
-    uint256 public currentPhase; 
-    uint256 public maxSupply; 
-    uint256 public totalSold; 
+    uint256 public currentPhase;
+    uint256 public maxSupply;
+    uint256 public totalSold;
     uint256 public startingTime;
     uint256 public endingTime;
     uint256 public immutable FEE_BPS = 200; // 200 bps = 2%
     uint256 public collectedETHFees;
 
-    mapping(address => bool) public isBlacklisted; 
-    mapping(address => uint256) public userTokensDeposited; 
+    mapping(address => bool) public isBlacklisted;
+    mapping(address => uint256) public userTokensDeposited;
     mapping(address => uint256) public collectedFees;
 
     event UserBlacklisted(address user);
@@ -38,8 +38,18 @@ contract Presale is Ownable, ReentrancyGuard {
     event ETHBought(address user, uint256 amount);
     event TokensClaimed(address user, uint256 amount);
     event FeeWithdrawn(address token, uint256 amount);
-    
-    constructor(address _saleTokenAddress, address _usdcAddress, address _usdtAddress, address _fundsReceiverAddr, address _dataFeedAddress , uint256[][3] memory _phases, uint256 _maxSupply, uint256 _startingTime, uint256 _endingTime) Ownable(msg.sender) {
+
+    constructor(
+        address _saleTokenAddress,
+        address _usdcAddress,
+        address _usdtAddress,
+        address _fundsReceiverAddr,
+        address _dataFeedAddress,
+        uint256[][3] memory _phases,
+        uint256 _maxSupply,
+        uint256 _startingTime,
+        uint256 _endingTime
+    ) Ownable(msg.sender) {
         saleTokenAddress = _saleTokenAddress;
         usdcAddress = _usdcAddress;
         usdtAddress = _usdtAddress;
@@ -56,7 +66,7 @@ contract Presale is Ownable, ReentrancyGuard {
     /**
      * @notice Add a user to the blacklist
      * @dev Only callable by the owner
-     * @param _user Address of the user to add to the blacklist 
+     * @param _user Address of the user to add to the blacklist
      */
     function blacklist(address _user) external onlyOwner {
         isBlacklisted[_user] = true;
@@ -96,7 +106,8 @@ contract Presale is Ownable, ReentrancyGuard {
             tokenAmountToReceive = netAmount * 1e6 / phases[currentPhase][1];
         } else {
             // Generalized formula to normalize any payment token decimals to 18
-            tokenAmountToReceive = netAmount * 10**(18 - ERC20(_tokenUsedToBuy).decimals()) * 1e6 / phases[currentPhase][1];
+            tokenAmountToReceive =
+                netAmount * 10 ** (18 - ERC20(_tokenUsedToBuy).decimals()) * 1e6 / phases[currentPhase][1];
         }
 
         checkCurrentPhase(tokenAmountToReceive);
@@ -120,13 +131,13 @@ contract Presale is Ownable, ReentrancyGuard {
         require(!isBlacklisted[msg.sender], "User is blacklisted");
         require(block.timestamp >= startingTime && block.timestamp <= endingTime, "Presale not started yet");
 
-        uint collectedETHFee = msg.value * FEE_BPS / 10000;
-        uint netValue = msg.value - collectedETHFee;
+        uint256 collectedETHFee = msg.value * FEE_BPS / 10000;
+        uint256 netValue = msg.value - collectedETHFee;
         collectedETHFees += collectedETHFee;
 
         uint256 usdValue = netValue * getEtherPrice() / 1e18;
-        uint256 tokenAmountToReceive = usdValue * 1e6 /phases[currentPhase][1];
-        
+        uint256 tokenAmountToReceive = usdValue * 1e6 / phases[currentPhase][1];
+
         checkCurrentPhase(tokenAmountToReceive);
 
         require(totalSold <= maxSupply, "Max supply reached");
@@ -144,12 +155,12 @@ contract Presale is Ownable, ReentrancyGuard {
      * @notice Allows a user to claim presale tokens after the sale has ended.
      * @dev Transfers the allocated tokens to the caller and resets their allocation.
      */
-    function claimTokens() external nonReentrant(){   
+    function claimTokens() external nonReentrant {
         require(block.timestamp > endingTime, "Claim period not started");
 
         uint256 tokenAmountToReceive = userTokensDeposited[msg.sender];
         require(tokenAmountToReceive > 0, "Nothing to claim");
-        delete userTokensDeposited[msg.sender]; 
+        delete userTokensDeposited[msg.sender];
 
         IERC20(saleTokenAddress).safeTransfer(msg.sender, tokenAmountToReceive);
 
@@ -161,7 +172,7 @@ contract Presale is Ownable, ReentrancyGuard {
      * @dev Follows CEI patter
      * @param _token The token address to withdraw fees for, or address(0) for ETH.
      */
-    function withdrawFees(address _token) external onlyOwner nonReentrant() {
+    function withdrawFees(address _token) external onlyOwner nonReentrant {
         require(block.timestamp > endingTime, "Claim period not started");
 
         if (_token == address(0)) {
@@ -176,7 +187,6 @@ contract Presale is Ownable, ReentrancyGuard {
             IERC20(_token).safeTransfer(msg.sender, tokenAmount);
             emit FeeWithdrawn(_token, tokenAmount);
         }
-
     }
 
     /**
@@ -202,7 +212,7 @@ contract Presale is Ownable, ReentrancyGuard {
 
         emit EmergencyETHWithdrawn(balance);
     }
-    
+
     /**
      * @notice Checks if the presale should move to the next phase.
      * @dev Advances the current phase if either:
@@ -212,8 +222,11 @@ contract Presale is Ownable, ReentrancyGuard {
      * @param _amount The amount of presale tokens from the current purchase to evaluate against the phase cap.
      * @return phase The updated current phase index.
      */
-    function checkCurrentPhase(uint256 _amount) private returns(uint256 phase) {
-        if (_amount + totalSold >= phases[currentPhase][0] || block.timestamp >= phases[currentPhase][2] && currentPhase < 2) {
+    function checkCurrentPhase(uint256 _amount) private returns (uint256 phase) {
+        if (
+            _amount + totalSold >= phases[currentPhase][0]
+                || block.timestamp >= phases[currentPhase][2] && currentPhase < 2
+        ) {
             currentPhase++;
             phase = currentPhase;
         } else {
@@ -225,8 +238,8 @@ contract Presale is Ownable, ReentrancyGuard {
      * @notice Chainlink oracle to get the current eth/usd price conversion
      * @dev Returned price with 8 decimals according to the arbiscan ETH/USD 0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612 contract
      */
-    function getEtherPrice() public view returns(uint256) {
-        (,int256 price,,,) = IAggregator(dataFeedAddress).latestRoundData();
+    function getEtherPrice() public view returns (uint256) {
+        (, int256 price,,,) = IAggregator(dataFeedAddress).latestRoundData();
         price = price * 1e10;
         return uint256(price);
     }
@@ -239,5 +252,4 @@ contract Presale is Ownable, ReentrancyGuard {
     function depositSaleTokens(uint256 amount) external onlyOwner {
         IERC20(saleTokenAddress).safeTransferFrom(msg.sender, address(this), amount);
     }
-
 }
