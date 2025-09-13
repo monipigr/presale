@@ -71,8 +71,7 @@ flowchart TD
 
 ## 🧪 Tests
 
-Complete suite test using **Foundry**, with forked Arbitrum RPC for integration and  
-two mock contracts (`MockAggregator.sol` for the Chainlink price feed and `MockTreasury.sol` for ETH/stablecoin receiving).
+Complete suite test using **Foundry**, with forked Arbitrum RPC for integration and two mock contracts (`MockAggregator.sol` for the Chainlink price feed and `MockTreasury.sol` for ETH/stablecoin receiving).
 
 The suite includes happy paths, negative paths, edge cases, fuzzing, and invariant tests to ensure robustness.
 
