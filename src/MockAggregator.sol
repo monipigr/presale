@@ -6,7 +6,7 @@ contract MockAggregator {
     int256 private _answer;
 
     constructor(int256 initialAnswer) {
-        _answer = initialAnswer; // Ejemplo: 2000e8 = $2000 con 8 decimales
+        _answer = initialAnswer; 
     }
 
     function latestRoundData()

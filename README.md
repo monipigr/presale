@@ -17,47 +17,6 @@ Presale is a complete mini-protocol for managing the launch of a new ERC20 token
 
 ## 📊 Flow Diagram
 
-```mermaid
-flowchart TD
-
-    subgraph Presale
-        B1[buyWithTokens()]
-        B2[buyWithETH()]
-        C1[claimTokens()]
-        W1[withdrawFees()]
-        E1[emergencyWithdrawTokens()]
-        E2[emergencyWithdrawETH()]
-        BL[blacklist/unBlacklist()]
-    end
-
-    subgraph FlyToken
-        FT1[_mint()]
-        FT2[approve()]
-        FT3[transfer()]
-    end
-
-    subgraph MockAggregator
-        MA1[latestRoundData()]
-    end
-
-    subgraph MockTreasury
-        MT1[receive ETH]
-        MT2[receive USDT/USDC]
-    end
-
-    %% Relationships
-    B1 -->|uses USDT/USDC| MockTreasury
-    B2 -->|uses ETH/USD price| MockAggregator
-    B2 -->|sends ETH| MockTreasury
-    C1 -->|sends FlyToken| FlyToken
-    W1 -->|sends fees| Owner
-    E1 -->|withdraw tokens| Owner
-    E2 -->|withdraw ETH| Owner
-
-    Presale --> FlyToken
-
-```
-
 ## 🔐 Security Measures and Patterns
 
 - 🪙 **SafeERC20**: all token transfers use `SafeERC20` to handle non-standard ERC20 implementations safely
@@ -73,7 +32,7 @@ flowchart TD
 
 Complete suite test using **Foundry**, with forked Arbitrum RPC for integration and two mock contracts (`MockAggregator.sol` for the Chainlink price feed and `MockTreasury.sol` for ETH/stablecoin receiving).
 
-The suite includes happy paths, negative paths, edge cases, fuzzing, and invariant tests to ensure robustness.
+The suite includes happy paths, negative paths, edge cases, and fuzzing tests to ensure robustness.
 
 - ✅ `buyWithTokens()` – happy path, invalid token, zero amount, blacklist, presale inactive, max supply, phase changes
 - ✅ `buyWithETH()` – happy path, zero amount, blacklist, presale inactive, oracle integration, max supply
@@ -83,7 +42,6 @@ The suite includes happy paths, negative paths, edge cases, fuzzing, and invaria
 - ✅ `emergencyWithdrawTokens()` – owner only, reverts for non-owners
 - ✅ `emergencyWithdrawETH()` – owner only, reverts for non-owners
 - ✅ Fuzzing tests for token and ETH purchases
-- ✅ Invariant tests for max supply and fee consistency
 
 Run tests with:
 

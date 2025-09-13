@@ -1,7 +1,3 @@
-// Direcciones reales en Arbitrum
-// usdt = IERC20(0xfd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9); // USDT
-// dataFeed = IAggregator(0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612); // ETH/USD feed
-
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
@@ -516,5 +512,3 @@ contract PresaleTest is Test {
     }
 
 }
-
-   
