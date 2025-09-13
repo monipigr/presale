@@ -3,13 +3,15 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Presale} from "../src/Presale.sol";
+import {StdCheats} from "forge-std/StdCheats.sol";
+
 import {FlyToken} from "../src/FlyToken.sol";
 import {MockTreasury} from "../src/MockTreasury.sol";
 import {MockAggregator} from "../src/MockAggregator.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
 import "../lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 
-contract PresaleTest is Test {
+contract PresaleTest is Test, StdCheats {
     Presale public presale;
     FlyToken public flyToken;
     MockTreasury public mockTreasury;
