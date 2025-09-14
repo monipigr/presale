@@ -15,8 +15,6 @@ Presale is a complete mini-protocol for managing the launch of a new ERC20 token
 - 🔓 **Fee Withdrawal**: only the owner can withdraw accumulated fees (ERC20 or ETH) after the presale ends.
 - 🆘 **Emergency Withdraw**: owner can rescue tokens or ETH if needed.
 
-## 📊 Flow Diagram
-
 ## 🔐 Security Measures and Patterns
 
 - 🪙 **SafeERC20**: all token transfers use `SafeERC20` to handle non-standard ERC20 implementations safely
