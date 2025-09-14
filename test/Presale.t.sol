@@ -497,17 +497,17 @@ contract PresaleTest is Test {
         assertEq(presale.collectedETHFees(), 0, "ETH fees not cleared");
     }
 
-    // /**
-    //  * @notice Tests that non-owners cannot call withdrawFees.
-    //  */
-    // function test_withdrawFees_revertsIfNotOwner() public {
-    //     vm.warp(_endingTime + 1);
+    /**
+     * @notice Tests that non-owners cannot call withdrawFees.
+     */
+    function test_withdrawFees_revertsIfNotOwner() public {
+        vm.warp(_endingTime + 1);
 
-    //     vm.startPrank(user);
-    //     vm.expectRevert();
-    //     presale.withdrawFees(_usdtAddress);
-    //     vm.stopPrank();
-    // }
+        vm.startPrank(user);
+        vm.expectRevert();
+        presale.withdrawFees(_usdtAddress);
+        vm.stopPrank();
+    }
 
     /**
      * @notice Tests that withdrawFees reverts if called before the presale ends.
